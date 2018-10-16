@@ -51,7 +51,7 @@ SEXP coalesce(SEXP args)
 
 	if (n <= 1) {
 		/* find and return first non-NA */
-		for (; x != R_NilValue; args = CDR(args), x = CAR(args)) {
+		for (; args != R_NilValue; args = CDR(args), x = CAR(args)) {
 			int r;
 
 			if (XLENGTH(x) > 1) {
@@ -66,6 +66,14 @@ SEXP coalesce(SEXP args)
 		PROTECT(ans = allocVector(LGLSXP, 1));
 		*LOGICAL(ans) = NA_LOGICAL;
 		goto out;
+	}
+
+	if (isFactor(x)) {
+		/* convert them all to string lists */
+		for (SEXP z = args; z != R_NilValue; z = CDR(z)) {
+			SETCAR(z, asCharacterFactor(CAR(z)));
+		}
+		x = CAR(args);
 	}
 
 	PROTECT(ans = allocVector(TYPEOF(x), n));
@@ -91,7 +99,7 @@ SEXP coalesce(SEXP args)
 	}
 
 	for (args = CDR(args), x = CAR(args);
-	     x != R_NilValue; args = CDR(args), x = CAR(args)) {
+	     args != R_NilValue; args = CDR(args), x = CAR(args)) {
 		if (TYPEOF(x) != TYPEOF(ans)) {
 			error("types don't add up");
 			goto err;
