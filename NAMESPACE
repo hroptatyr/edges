@@ -1,0 +1,7 @@
+useDynLib(myR, .registration=TRUE)
+
+## For S4-ization
+import(methods)
+##
+
+export(coalesce)

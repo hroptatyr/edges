@@ -1,0 +1,12 @@
+Package: myR
+Version: 0.1.0
+Title: routines that I need a lot
+Authors@R: c(
+  person("Sebastian","Freundt", role=c("aut","cre"), email="sebastian.freundt@ga-group.nl"))
+Depends: R (>= 3.1.0)
+Imports: methods
+Suggests:
+Description: Extended melt
+License: MPL-2.0 | file LICENSE
+VignetteBuilder: knitr
+ByteCompile: TRUE

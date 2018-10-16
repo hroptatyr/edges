@@ -1,0 +1,4 @@
+coalesce <- function(...)
+{
+	.External(Ccoalesce, ...)
+}
