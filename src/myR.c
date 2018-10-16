@@ -101,11 +101,19 @@ SEXP coalesce(SEXP args)
 		}
 
 		switch (TYPEOF(x)) {
+			R_xlen_t k;
 		case LGLSXP:
 			for (R_xlen_t j = 0; j < n; j++) {
 				LOGICAL(ans)[j] = LOGICAL(ans)[j] != NA_LOGICAL
 					? LOGICAL(ans)[j]
 					: LOGICAL(x)[j];
+			}
+			for (R_xlen_t j = k = 0; j < n; j++) {
+				k += LOGICAL(ans)[j] != NA_LOGICAL;
+			}
+			if (k >= n) {
+				/* premature finish */
+				goto out;
 			}
 			break;
 		case INTSXP:
@@ -114,12 +122,26 @@ SEXP coalesce(SEXP args)
 					? INTEGER(ans)[j]
 					: INTEGER(x)[j];
 			}
+			for (R_xlen_t j = k = 0; j < n; j++) {
+				k += INTEGER(ans)[j] != NA_INTEGER;
+			}
+			if (k >= n) {
+				/* premature finish */
+				goto out;
+			}
 			break;
 		case REALSXP:
 			for (R_xlen_t j = 0; j < n; j++) {
 				REAL(ans)[j] = !ISNAN(REAL(ans)[j])
 					? REAL(ans)[j]
 					: REAL(x)[j];
+			}
+			for (R_xlen_t j = k = 0; j < n; j++) {
+				k += !ISNAN(REAL(ans)[j]);
+			}
+			if (k >= n) {
+				/* premature finish */
+				goto out;
 			}
 			break;
 		case CPLXSXP:
@@ -129,6 +151,14 @@ SEXP coalesce(SEXP args)
 					? v
 					: COMPLEX(x)[j];
 			}
+			for (R_xlen_t j = k = 0; j < n; j++) {
+				Rcomplex v = COMPLEX(ans)[j];
+				k += !ISNAN(v.r) && !ISNAN(v.i);
+			}
+			if (k >= n) {
+				/* premature finish */
+				goto out;
+			}
 			break;
 		case STRSXP:
 			for (R_xlen_t j = 0; j < n; j++) {
@@ -136,6 +166,14 @@ SEXP coalesce(SEXP args)
 				if (v == NA_STRING) {
 					SET_STRING_ELT(ans, j, STRING_ELT(x, j));
 				}
+			}
+			for (R_xlen_t j = k = 0; j < n; j++) {
+				SEXP v = STRING_ELT(ans, j);
+				k += v != NA_STRING;
+			}
+			if (k >= n) {
+				/* premature finish */
+				goto out;
 			}
 			break;
 		default:
