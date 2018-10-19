@@ -197,3 +197,106 @@ err:
 	UNPROTECT(2);
 	return R_NilValue;
 }
+
+SEXP edges(SEXP x)
+{
+	R_xlen_t n = XLENGTH(x);
+	SEXP ans;
+
+	if (!n) {
+		return allocVector(LGLSXP, 0);
+	}
+
+	PROTECT(x);
+	PROTECT(ans = allocVector(LGLSXP, n));
+
+	switch (TYPEOF(x)) {
+		R_xlen_t k;
+	case STRSXP:
+		for (k = 0; k < n && STRING_ELT(x, k) == NA_STRING; k++) {
+			LOGICAL(ans)[k] = NA_LOGICAL;
+		}
+		for (R_xlen_t i; k < n; k = i) {
+			SEXP r = STRING_ELT(x, k);
+
+			LOGICAL(ans)[k] = TRUE;
+			for (i = k + 1; i < n; i++) {
+				for (; i < n && STRING_ELT(x, i) == NA_STRING; i++) {
+					LOGICAL(ans)[i] = NA_LOGICAL;
+				}
+				if (i >= n ||
+				    strcmp(CHAR(r), CHAR(STRING_ELT(x, i)))) {
+					break;
+				}
+				LOGICAL(ans)[i] = FALSE;
+			}
+		}
+		break;
+	case INTSXP:
+		for (k = 0; k < n && INTEGER(x)[k] == NA_INTEGER; k++) {
+			LOGICAL(ans)[k] = NA_LOGICAL;
+		}
+		for (R_xlen_t i; k < n; k = i) {
+			LOGICAL(ans)[k] = TRUE;
+			for (i = k + 1; i < n; i++) {
+				for (; i < n && INTEGER(x)[i] == NA_INTEGER; i++) {
+					LOGICAL(ans)[i] = NA_LOGICAL;
+				}
+				if (i >= n || INTEGER(x)[i] != INTEGER(x)[k]) {
+					break;
+				}
+				LOGICAL(ans)[i] = FALSE;
+			}
+		}
+		break;
+	case REALSXP:
+		for (k = 0; k < n && REAL(x)[k] == NA_REAL; k++) {
+			LOGICAL(ans)[k] = NA_LOGICAL;
+		}
+		for (R_xlen_t i; k < n; k = i) {
+			LOGICAL(ans)[k] = TRUE;
+			for (i = k + 1; i < n; i++) {
+				for (; i < n && REAL(x)[i] == NA_REAL; i++) {
+					LOGICAL(ans)[i] = NA_LOGICAL;
+				}
+				if (i >= n ||
+				    fabs(REAL(x)[i] - REAL(x)[k]) > DBL_EPSILON) {
+					break;
+				}
+				LOGICAL(ans)[i] = FALSE;
+			}
+		}
+		break;
+	case LGLSXP:
+		for (k = 0; k < n && LOGICAL(x)[k] == NA_LOGICAL; k++) {
+			LOGICAL(ans)[k] = NA_LOGICAL;
+		}
+		for (R_xlen_t i; k < n; k = i) {
+			LOGICAL(ans)[k] = TRUE;
+			for (i = k + 1; i < n; i++) {
+				for (; i < n && LOGICAL(x)[i] == NA_LOGICAL; i++) {
+					LOGICAL(ans)[i] = NA_LOGICAL;
+				}
+				if (i >= n || LOGICAL(x)[i] != LOGICAL(x)[k]) {
+					break;
+				}
+				LOGICAL(ans)[i] = FALSE;
+			}
+		}
+		break;
+	case LISTSXP:
+	case VECSXP:
+	case CPLXSXP:
+	case RAWSXP:
+	case NILSXP:
+	default:
+	naught:
+		for (k = 0; k < n && REAL(x)[k] == NA_REAL; k++) {
+			LOGICAL(ans)[k] = NA_LOGICAL;
+		}
+		break;
+	}
+
+	UNPROTECT(2);
+	return ans;
+}

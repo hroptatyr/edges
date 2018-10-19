@@ -5,6 +5,7 @@
 
 static const
 R_CallMethodDef callMethods[] = {
+	{"Cedges", (DL_FUNC)&edges, -1},
 	{NULL, NULL, 0}
 };
 

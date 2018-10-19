@@ -5,3 +5,4 @@ import(methods)
 ##
 
 export(coalesce)
+export(edges)
