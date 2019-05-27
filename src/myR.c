@@ -250,7 +250,7 @@ SEXP edges(SEXP x)
 		}
 		break;
 	case REALSXP:
-		for (k = 0; k < n && REAL(x)[k] == NA_REAL; k++) {
+		for (k = 0; k < n && R_IsNA(REAL(x)[k]); k++) {
 			LOGICAL(ans)[k] = NA_LOGICAL;
 		}
 		for (R_xlen_t i; k < n; k = i) {
