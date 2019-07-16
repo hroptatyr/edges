@@ -256,7 +256,7 @@ SEXP edges(SEXP x)
 		for (R_xlen_t i; k < n; k = i) {
 			LOGICAL(ans)[k] = TRUE;
 			for (i = k + 1; i < n; i++) {
-				for (; i < n && REAL(x)[i] == NA_REAL; i++) {
+				for (; i < n && R_IsNA(REAL(x)[i]); i++) {
 					LOGICAL(ans)[i] = NA_LOGICAL;
 				}
 				if (i >= n ||
