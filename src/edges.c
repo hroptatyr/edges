@@ -290,8 +290,7 @@ SEXP edges(SEXP x)
 	case RAWSXP:
 	case NILSXP:
 	default:
-	naught:
-		for (k = 0; k < n && REAL(x)[k] == NA_REAL; k++) {
+		for (k = 0; k < n; k++) {
 			LOGICAL(ans)[k] = NA_LOGICAL;
 		}
 		break;
