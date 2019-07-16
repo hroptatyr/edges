@@ -207,7 +207,6 @@ SEXP edges(SEXP x)
 		return allocVector(LGLSXP, 0);
 	}
 
-	PROTECT(x);
 	PROTECT(ans = allocVector(LGLSXP, n));
 
 	switch (TYPEOF(x)) {
@@ -296,6 +295,108 @@ SEXP edges(SEXP x)
 		break;
 	}
 
-	UNPROTECT(2);
+	UNPROTECT(1);
+	return ans;
+}
+
+SEXP rally(SEXP x)
+{
+	R_xlen_t n = XLENGTH(x);
+	SEXP ans;
+	int r = 0;
+
+	if (!n) {
+		return allocVector(INTSXP, 0);
+	}
+
+	PROTECT(ans = allocVector(INTSXP, n));
+
+	switch (TYPEOF(x)) {
+		R_xlen_t k;
+	case STRSXP:
+		for (k = 0; k < n && STRING_ELT(x, k) == NA_STRING; k++) {
+			INTEGER(ans)[k] = NA_INTEGER;
+		}
+		for (R_xlen_t i; k < n; k = i) {
+			SEXP s = STRING_ELT(x, k);
+
+			INTEGER(ans)[k] = ++r;
+			for (i = k + 1; i < n; i++) {
+				for (; i < n && STRING_ELT(x, i) == NA_STRING; i++) {
+					INTEGER(ans)[i] = NA_INTEGER;
+				}
+				if (i >= n ||
+				    strcmp(CHAR(s), CHAR(STRING_ELT(x, i)))) {
+					break;
+				}
+				INTEGER(ans)[i] = r;
+			}
+		}
+		break;
+	case INTSXP:
+		for (k = 0; k < n && INTEGER(x)[k] == NA_INTEGER; k++) {
+			INTEGER(ans)[k] = NA_INTEGER;
+		}
+		for (R_xlen_t i; k < n; k = i) {
+			INTEGER(ans)[k] = ++r;
+			for (i = k + 1; i < n; i++) {
+				for (; i < n && INTEGER(x)[i] == NA_INTEGER; i++) {
+					INTEGER(ans)[i] = NA_INTEGER;
+				}
+				if (i >= n || INTEGER(x)[i] != INTEGER(x)[k]) {
+					break;
+				}
+				INTEGER(ans)[i] = r;
+			}
+		}
+		break;
+	case REALSXP:
+		for (k = 0; k < n && R_IsNA(REAL(x)[k]); k++) {
+			INTEGER(ans)[k] = NA_INTEGER;
+		}
+		for (R_xlen_t i; k < n; k = i) {
+			INTEGER(ans)[k] = ++r;
+			for (i = k + 1; i < n; i++) {
+				for (; i < n && R_IsNA(REAL(x)[i]); i++) {
+					INTEGER(ans)[i] = NA_INTEGER;
+				}
+				if (i >= n ||
+				    fabs(REAL(x)[i] - REAL(x)[k]) > DBL_EPSILON) {
+					break;
+				}
+				INTEGER(ans)[i] = r;
+			}
+		}
+		break;
+	case LGLSXP:
+		for (k = 0; k < n && LOGICAL(x)[k] == NA_LOGICAL; k++) {
+			INTEGER(ans)[k] = NA_INTEGER;
+		}
+		for (R_xlen_t i; k < n; k = i) {
+			INTEGER(ans)[k] = ++r;
+			for (i = k + 1; i < n; i++) {
+				for (; i < n && LOGICAL(x)[i] == NA_LOGICAL; i++) {
+					INTEGER(ans)[i] = NA_INTEGER;
+				}
+				if (i >= n || LOGICAL(x)[i] != LOGICAL(x)[k]) {
+					break;
+				}
+				INTEGER(ans)[i] = r;
+			}
+		}
+		break;
+	case LISTSXP:
+	case VECSXP:
+	case CPLXSXP:
+	case RAWSXP:
+	case NILSXP:
+	default:
+		for (k = 0; k < n; k++) {
+			INTEGER(ans)[k] = NA_INTEGER;
+		}
+		break;
+	}
+
+	UNPROTECT(1);
 	return ans;
 }

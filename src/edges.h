@@ -3,3 +3,4 @@
 
 SEXP coalesce(SEXP args);
 SEXP edges(SEXP x);
+SEXP rally(SEXP x);

@@ -6,6 +6,7 @@
 static const
 R_CallMethodDef callMethods[] = {
 	{"Cedges", (DL_FUNC)&edges, -1},
+	{"Crally", (DL_FUNC)&rally, -1},
 	{NULL, NULL, 0}
 };
 

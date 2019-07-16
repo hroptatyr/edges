@@ -2,3 +2,4 @@ useDynLib(edges, .registration=TRUE)
 
 export(coalesce)
 export(edges)
+export(rally)
