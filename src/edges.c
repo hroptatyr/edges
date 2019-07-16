@@ -1,7 +1,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
-#include "myR.h"
+#include "edges.h"
 #include <Rdefines.h>
 #include <immintrin.h>
 

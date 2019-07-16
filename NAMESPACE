@@ -1,8 +1,4 @@
-useDynLib(myR, .registration=TRUE)
-
-## For S4-ization
-import(methods)
-##
+useDynLib(edges, .registration=TRUE)
 
 export(coalesce)
 export(edges)

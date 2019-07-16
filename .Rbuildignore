@@ -1,0 +1,5 @@
+^\.RData$
+^\.Rhistory$
+^Makefile$
+^core.*$
+^.*\.tar.gz$

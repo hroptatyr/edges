@@ -1,6 +1,6 @@
 R ?= R --vanilla
 
-PKG = myR_0.1.0.tar.gz
+PKG = edges_0.1.0.tar.gz
 
 .PHONY: all
 all: build install

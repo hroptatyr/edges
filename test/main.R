@@ -1,4 +1,4 @@
-require(myR)
+require(edges)
 
 x <- factor(c(NA, NA, "bar"))
 y <- factor(c("foo", NA, "zar"))
