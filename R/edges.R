@@ -12,3 +12,8 @@ rally <- function(x)
 {
 	.Call(Crally, x)
 }
+
+cumrally <- function(x)
+{
+	.Call(Ccumrally, x)
+}
