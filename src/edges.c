@@ -223,8 +223,7 @@ SEXP edges(SEXP x)
 				for (; i < n && STRING_ELT(x, i) == NA_STRING; i++) {
 					LOGICAL(ans)[i] = NA_LOGICAL;
 				}
-				if (i >= n ||
-				    strcmp(CHAR(r), CHAR(STRING_ELT(x, i)))) {
+				if (i >= n || r != STRING_ELT(x, i)) {
 					break;
 				}
 				LOGICAL(ans)[i] = FALSE;
@@ -325,8 +324,7 @@ SEXP rally(SEXP x)
 				for (; i < n && STRING_ELT(x, i) == NA_STRING; i++) {
 					INTEGER(ans)[i] = NA_INTEGER;
 				}
-				if (i >= n ||
-				    strcmp(CHAR(s), CHAR(STRING_ELT(x, i)))) {
+				if (i >= n || s != STRING_ELT(x, i)) {
 					break;
 				}
 				INTEGER(ans)[i] = r;
@@ -427,8 +425,7 @@ SEXP cumrally(SEXP x)
 				for (; i < n && STRING_ELT(x, i) == NA_STRING; i++) {
 					INTEGER(ans)[i] = NA_INTEGER;
 				}
-				if (i >= n ||
-				    strcmp(CHAR(s), CHAR(STRING_ELT(x, i)))) {
+				if (i >= n || s != STRING_ELT(x, i)) {
 					break;
 				}
 				INTEGER(ans)[i] = ++r;
