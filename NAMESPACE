@@ -1,6 +1,8 @@
 useDynLib(edges, .registration=TRUE)
 
 export(coalesce)
+export(na.locf)
+
 export(edges)
 export(rally)
 export(cumrally)

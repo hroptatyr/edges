@@ -198,6 +198,75 @@ err:
 	return R_NilValue;
 }
 
+SEXP na_locf0(SEXP x)
+{
+	R_xlen_t n = XLENGTH(x);
+	SEXP ans;
+	int r;
+
+	PROTECT(ans = allocVector(TYPEOF(x), n));
+
+	switch (TYPEOF(x)) {
+		R_xlen_t k;
+	case STRSXP:
+		for (k = 0; k < n && STRING_ELT(x, k) == NA_STRING; k++) {
+			SET_STRING_ELT(ans, k, NA_STRING);
+		}
+		for (R_xlen_t i; k < n; k = i) {
+			SET_STRING_ELT(ans, k, STRING_ELT(x, k));
+			for (i = k + 1; i < n && STRING_ELT(x, i) == NA_STRING; i++) {
+				SET_STRING_ELT(ans, i,  STRING_ELT(x, k));
+			}
+		}
+		break;
+	case INTSXP:
+		for (k = 0; k < n && INTEGER(x)[k] == NA_INTEGER; k++) {
+			INTEGER(ans)[k] = NA_INTEGER;
+		}
+		for (R_xlen_t i; k < n; k = i) {
+			INTEGER(ans)[k] = INTEGER(x)[k];
+			for (i = k + 1; i < n && INTEGER(x)[i] == NA_INTEGER; i++) {
+				INTEGER(ans)[i] = INTEGER(x)[k];
+			}
+		}
+		break;
+	case REALSXP:
+		for (k = 0; k < n && R_IsNA(REAL(x)[k]); k++) {
+			REAL(ans)[k] = NA_REAL;
+		}
+		for (R_xlen_t i; k < n; k = i) {
+			REAL(ans)[k] = REAL(x)[k];
+			for (i = k + 1; i < n && R_IsNA(REAL(x)[i]); i++) {
+				REAL(ans)[i] = REAL(x)[k];
+			}
+		}
+		break;
+	case LGLSXP:
+		for (k = 0; k < n && LOGICAL(x)[k] == NA_LOGICAL; k++) {
+			LOGICAL(ans)[k] = NA_LOGICAL;
+		}
+		for (R_xlen_t i; k < n; k = i) {
+			LOGICAL(ans)[k] = LOGICAL(x)[k];
+			for (i = k + 1; i < n && LOGICAL(x)[i] == NA_LOGICAL; i++) {
+				LOGICAL(ans)[i] = LOGICAL(x)[k];
+			}
+		}
+		break;
+	case LISTSXP:
+	case VECSXP:
+	case CPLXSXP:
+	case RAWSXP:
+	case NILSXP:
+	default:
+		ans = x;
+		break;
+	}
+
+	UNPROTECT(1);
+	return ans;
+}
+
+
 SEXP edges(SEXP x)
 {
 	R_xlen_t n = XLENGTH(x);
