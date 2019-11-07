@@ -51,9 +51,8 @@ SEXP coalesce(SEXP args)
 	/* obtain maximum length and check types */
 	for (SEXP z = args; z != R_NilValue; z = CDR(z)) {
 		SEXP x = CAR(z);
-		R_xlen_t m;
+		R_xlen_t m = XLENGTH(x);
 
-		m = XLENGTH(x);
 		n = m <= n ? n : m;
 
 		if (isFactor(x)) {
@@ -111,7 +110,13 @@ SEXP coalesce(SEXP args)
 			goto err;
 		}
 		memcpy(DATAPTR(ans), DATAPTR_RO(x), z * m);
-		memset((char*)DATAPTR(ans) + (z * m), -1, z * (n - m));
+		if (anstyp != STRSXP) {
+			memset((char*)DATAPTR(ans) + (z * m), -1, z * (n - m));
+		} else {
+			for (size_t j = m; j < n; j++) {
+				SET_STRING_ELT(ans, j, NA_STRING);
+			}
+		}
 	}
 
 	for (args = CDR(args); args != R_NilValue; args = CDR(args)) {
@@ -130,12 +135,20 @@ SEXP coalesce(SEXP args)
 					? ansp[j]
 					: xp[j];
 			}
-			#pragma omp parallel for
-			for (R_xlen_t j = k = 0; j < m; j++) {
-				k += ansp[j] != NA_LOGICAL;
-			}
-			if (k >= n) {
-				/* premature finish */
+			if (LIKELY(m > 1 || CDR(args) != R_NilValue)) {
+				#pragma omp parallel for
+				for (R_xlen_t j = 0; j < m; j++) {
+					k += ansp[j] != NA_LOGICAL;
+				}
+				if (k >= n) {
+					/* premature finish */
+					goto out;
+				}
+			} else if (m == 1) {
+				#pragma omp parallel for
+				for (R_xlen_t j = 0; j < n; j++) {
+					ansp[j] = ansp[j] != NA_LOGICAL ? ansp[j] : *xp;
+				}
 				goto out;
 			}
 			break;
@@ -152,12 +165,20 @@ SEXP coalesce(SEXP args)
 					? ansp[j]
 					: xp[j];
 			}
-			#pragma omp parallel for
-			for (R_xlen_t j = k = 0; j < m; j++) {
-				k += ansp[j] != NA_LOGICAL;
-			}
-			if (k >= n) {
-				/* premature finish */
+			if (LIKELY(m > 1 || CDR(args) != R_NilValue)) {
+				#pragma omp parallel for
+				for (R_xlen_t j = 0; j < m; j++) {
+					k += ansp[j] != NA_LOGICAL;
+				}
+				if (k >= n) {
+					/* premature finish */
+					goto out;
+				}
+			} else if (m == 1) {
+				#pragma omp parallel for
+				for (R_xlen_t j = 0; j < n; j++) {
+					ansp[j] = ansp[j] != NA_INTEGER ? ansp[j] : *xp;
+				}
 				goto out;
 			}
 			break;
@@ -174,12 +195,20 @@ SEXP coalesce(SEXP args)
 					? ansp[j]
 					: xp[j];
 			}
-			#pragma omp parallel for
-			for (R_xlen_t j = 0; j < n; j++) {
-				k += !ISNAN(ansp[j]);
-			}
-			if (k >= n) {
-				/* premature finish */
+			if (LIKELY(m > 1 || CDR(args) != R_NilValue)) {
+				#pragma omp parallel for
+				for (R_xlen_t j = 0; j < n; j++) {
+					k += !ISNAN(ansp[j]);
+				}
+				if (k >= n) {
+					/* premature finish */
+					goto out;
+				}
+			} else if (m == 1) {
+				#pragma omp parallel for
+				for (R_xlen_t j = 0; j < n; j++) {
+					ansp[j] = !ISNAN(ansp[j]) ? ansp[j] : *xp;
+				}
 				goto out;
 			}
 			break;
@@ -197,35 +226,52 @@ SEXP coalesce(SEXP args)
 					? v
 					: xp[j];
 			}
-			#pragma omp parallel for
-			for (R_xlen_t j = 0; j < n; j++) {
-				Rcomplex v = ansp[j];
-				k += !ISNAN(v.r) && !ISNAN(v.i);
-			}
-			if (k >= n) {
-				/* premature finish */
+			if (LIKELY(m > 1 || CDR(args) != R_NilValue)) {
+				#pragma omp parallel for
+				for (R_xlen_t j = 0; j < n; j++) {
+					Rcomplex v = ansp[j];
+					k += !ISNAN(v.r) && !ISNAN(v.i);
+				}
+				if (k >= n) {
+					/* premature finish */
+					goto out;
+				}
+			} else if (m == 1) {
+				#pragma omp parallel for
+				for (R_xlen_t j = 0; j < n; j++) {
+					Rcomplex v = ansp[j];
+					ansp[j] = !ISNAN(v.r) && !ISNAN(v.i) ? v : *xp;
+				}
 				goto out;
 			}
 			break;
 		}
 		case STRSXP: {
-			const SEXP *ansp = STRING_PTR_RO(ans);
+			SEXP *restrict ansp = STRING_PTR(ans);
 			const SEXP *xp = STRING_PTR_RO(x);
 			R_xlen_t m = XLENGTH(x);
 			R_xlen_t k = 0;
 
-			for (R_xlen_t j = 0; j < m; j++) {
-				SEXP v = STRING_ELT(ans, j);
-				if (v == NA_STRING) {
-					SET_STRING_ELT(ans, j, xp[j]);
-				}
-			}
 			#pragma omp parallel for
-			for (R_xlen_t j = 0; j < n; j++) {
-				k += ansp[j] != NA_STRING;
+			for (R_xlen_t j = 0; j < m; j++) {
+				ansp[j] = ansp[j] != NA_STRING
+					? ansp[j]
+					: xp[j];
 			}
-			if (k >= n) {
-				/* premature finish */
+			if (LIKELY(m > 1 || CDR(args) != R_NilValue)) {
+				#pragma omp parallel for
+				for (R_xlen_t j = 0; j < n; j++) {
+					k += ansp[j] != NA_STRING;
+				}
+				if (k >= n) {
+					/* premature finish */
+					goto out;
+				}
+			} else if (m == 1) {
+				#pragma omp parallel for
+				for (R_xlen_t j = 0; j < n; j++) {
+					ansp[j] = ansp[j] != NA_STRING ? ansp[j] : *xp;
+				}
 				goto out;
 			}
 			break;
