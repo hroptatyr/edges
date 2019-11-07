@@ -1,12 +1,14 @@
 Package: edges
 Version: 0.1.0
-Title: routines to deal with rallies and edges
+Title: Routines for Rallies and Edges
 Authors@R: c(
   person("Sebastian","Freundt", role=c("aut","cre"), email="sebastian.freundt@ga-group.nl"))
 Depends: R (>= 3.1.0)
-Imports:
 Suggests:
+    knitr,
+    methods,
+    testthat
+Author: Sebastian Freundt [aut, cre]
 Description: edges, rallies and dealing with those
-License: MPL-2.0 | file LICENSE
-VignetteBuilder: knitr
-ByteCompile: TRUE
+License: LGPL
+NeedsCompilation: yes

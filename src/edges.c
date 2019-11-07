@@ -4,15 +4,7 @@
 #include "edges.h"
 #include <Rdefines.h>
 #include <immintrin.h>
-
-#define _paste(x, y)	x ## y
-#define paste(x, y)	_paste(x, y)
-
-#if !defined with
-# define with(args...)							\
-	for (args, *paste(__ep, __LINE__) = (void*)1;			\
-	     paste(__ep, __LINE__); paste(__ep, __LINE__)= 0)
-#endif	/* !with */
+#include "nifty.h"
 
 static int
 isna(SEXP x)
@@ -41,23 +33,48 @@ isna(SEXP x)
 
 SEXP coalesce(SEXP args)
 {
-	R_xlen_t n;
-	SEXP x, ans;
+	R_xlen_t n = 0;
+	SEXPTYPE anstyp;
+	SEXP ans;
+	SEXP cls;
 
-	PROTECT(args = CDR(args));
+	/* eliminate NULLs */
+	for (SEXP z = args; z != R_NilValue; z = CDR(z)) {
+		if (CADR(z) == R_NilValue) {
+			SETCDR(z, CDDR(z));
+		}
+	}
 
-	x = CAR(args);
-	n = XLENGTH(x);
+	anstyp = TYPEOF(CAR(args = CDR(args)));
+	cls = PROTECT(getAttrib(CAR(args), R_ClassSymbol));
+
+	/* obtain maximum length and check types */
+	for (SEXP z = args; z != R_NilValue; z = CDR(z)) {
+		SEXP x = CAR(z);
+		R_xlen_t m;
+
+		m = XLENGTH(x);
+		n = m <= n ? n : m;
+
+		if (isFactor(x)) {
+			SETCAR(z, x = asCharacterFactor(x));
+			anstyp = STRSXP;
+			cls = R_NilValue;
+		} else if (UNLIKELY(TYPEOF(x) != anstyp)) {
+			error("types don't add up");
+		} else if (!R_compute_identical(cls, getAttrib(x, R_ClassSymbol), 0)) {
+			error("classes don't add up");
+		}
+	}
 
 	if (n <= 1) {
 		/* find and return first non-NA */
-		for (; args != R_NilValue; args = CDR(args), x = CAR(args)) {
+		for (; args != R_NilValue; args = CDR(args)) {
+			SEXP x = CAR(args);
 			int r;
 
-			if (XLENGTH(x) > 1) {
-				error("lengths don't add up");
-			} else if ((r = isna(x)) < 0) {
-				error("types don't add up");
+			if ((r = isna(x)) < 0) {
+				error("unsupported type");
 			} else if (!r) {
 				UNPROTECT(1);
 				return x;
@@ -68,99 +85,121 @@ SEXP coalesce(SEXP args)
 		goto out;
 	}
 
-	if (isFactor(x)) {
-		/* convert them all to string lists */
-		for (SEXP z = args; z != R_NilValue; z = CDR(z)) {
-			SETCAR(z, asCharacterFactor(CAR(z)));
-		}
-		x = CAR(args);
-	}
+	PROTECT(ans = allocVector(anstyp, n));
+	with (SEXP x = CAR(args)) {
+		size_t m = XLENGTH(x);
+		size_t z;
 
-	PROTECT(ans = allocVector(TYPEOF(x), n));
-	switch (TYPEOF(x)) {
-	case LGLSXP:
-	case INTSXP:
-		memcpy(DATAPTR(ans), DATAPTR_RO(x), n * sizeof(int));
-		break;
-	case REALSXP:
-		memcpy(DATAPTR(ans), DATAPTR_RO(x), n * sizeof(double));
-		break;
-	case CPLXSXP:
-		memcpy(DATAPTR(ans), DATAPTR_RO(x), n * sizeof(Rcomplex));
-		break;
-	case STRSXP:
-		memcpy(DATAPTR(ans), DATAPTR_RO(x), n * sizeof(SEXP));
-		break;
-	case RAWSXP:
-	case NILSXP:
-	default:
-		error("unsupported type");
-		goto err;
-	}
-
-	for (args = CDR(args), x = CAR(args);
-	     args != R_NilValue; args = CDR(args), x = CAR(args)) {
-		if (TYPEOF(x) != TYPEOF(ans)) {
-			error("types don't add up");
-			goto err;
-		} else if (XLENGTH(x) != n) {
-			error("lengths don't add up");
-			goto err;
-		}
-
-		switch (TYPEOF(x)) {
-			R_xlen_t k;
-		case LGLSXP:
-			for (R_xlen_t j = 0; j < n; j++) {
-				LOGICAL(ans)[j] = LOGICAL(ans)[j] != NA_LOGICAL
-					? LOGICAL(ans)[j]
-					: LOGICAL(x)[j];
-			}
-			for (R_xlen_t j = k = 0; j < n; j++) {
-				k += LOGICAL(ans)[j] != NA_LOGICAL;
-			}
-			if (k >= n) {
-				/* premature finish */
-				goto out;
-			}
-			break;
+		switch (anstyp) {
 		case INTSXP:
-			for (R_xlen_t j = 0; j < n; j++) {
-				INTEGER(ans)[j] = INTEGER(ans)[j] != NA_INTEGER
-					? INTEGER(ans)[j]
-					: INTEGER(x)[j];
-			}
-			for (R_xlen_t j = k = 0; j < n; j++) {
-				k += INTEGER(ans)[j] != NA_INTEGER;
-			}
-			if (k >= n) {
-				/* premature finish */
-				goto out;
-			}
+		case LGLSXP:
+			z = sizeof(int);
 			break;
 		case REALSXP:
-			for (R_xlen_t j = 0; j < n; j++) {
-				REAL(ans)[j] = !ISNAN(REAL(ans)[j])
-					? REAL(ans)[j]
-					: REAL(x)[j];
+			z = sizeof(double);
+			break;
+		case CPLXSXP:
+			z = sizeof(Rcomplex);
+			break;
+		case STRSXP:
+			z = sizeof(SEXP);
+			break;
+		case RAWSXP:
+		case NILSXP:
+		default:
+			error("unsupported type");
+			goto err;
+		}
+		memcpy(DATAPTR(ans), DATAPTR_RO(x), z * m);
+		memset((char*)DATAPTR(ans) + (z * m), -1, z * (n - m));
+	}
+
+	for (args = CDR(args); args != R_NilValue; args = CDR(args)) {
+		SEXP x = CAR(args);
+
+		switch (anstyp) {
+		case LGLSXP: {
+			int *restrict ansp = LOGICAL(ans);
+			const int *xp = LOGICAL(x);
+			R_xlen_t m = XLENGTH(x);
+			R_xlen_t k = 0;
+
+			#pragma omp parallel for
+			for (R_xlen_t j = 0U; j < m; j++) {
+				ansp[j] = ansp[j] != NA_LOGICAL
+					? ansp[j]
+					: xp[j];
 			}
-			for (R_xlen_t j = k = 0; j < n; j++) {
-				k += !ISNAN(REAL(ans)[j]);
+			#pragma omp parallel for
+			for (R_xlen_t j = k = 0; j < m; j++) {
+				k += ansp[j] != NA_LOGICAL;
 			}
 			if (k >= n) {
 				/* premature finish */
 				goto out;
 			}
 			break;
-		case CPLXSXP:
-			for (R_xlen_t j = 0; j < n; j++) {
-				Rcomplex v = COMPLEX(ans)[j];
-				COMPLEX(ans)[j] = !ISNAN(v.r) && !ISNAN(v.i)
-					? v
-					: COMPLEX(x)[j];
+		}
+		case INTSXP: {
+			int *restrict ansp = LOGICAL(ans);
+			const int *xp = LOGICAL(x);
+			R_xlen_t m = XLENGTH(x);
+			R_xlen_t k = 0;
+
+			#pragma omp parallel for
+			for (R_xlen_t j = 0U; j < m; j++) {
+				ansp[j] = ansp[j] != NA_INTEGER
+					? ansp[j]
+					: xp[j];
 			}
-			for (R_xlen_t j = k = 0; j < n; j++) {
-				Rcomplex v = COMPLEX(ans)[j];
+			#pragma omp parallel for
+			for (R_xlen_t j = k = 0; j < m; j++) {
+				k += ansp[j] != NA_LOGICAL;
+			}
+			if (k >= n) {
+				/* premature finish */
+				goto out;
+			}
+			break;
+		}
+		case REALSXP: {
+			double *restrict ansp = REAL(ans);
+			const double *xp = REAL(x);
+			R_xlen_t m = XLENGTH(x);
+			R_xlen_t k = 0;
+
+			#pragma omp parallel for
+			for (R_xlen_t j = 0; j < m; j++) {
+				ansp[j] = !ISNAN(ansp[j])
+					? ansp[j]
+					: xp[j];
+			}
+			#pragma omp parallel for
+			for (R_xlen_t j = 0; j < n; j++) {
+				k += !ISNAN(ansp[j]);
+			}
+			if (k >= n) {
+				/* premature finish */
+				goto out;
+			}
+			break;
+		}
+		case CPLXSXP: {
+			Rcomplex *restrict ansp = COMPLEX(ans);
+			const Rcomplex *xp = COMPLEX(x);
+			R_xlen_t m = XLENGTH(x);
+			R_xlen_t k = 0;
+
+			#pragma omp parallel for
+			for (R_xlen_t j = 0; j < m; j++) {
+				Rcomplex v = ansp[j];
+				ansp[j] = !ISNAN(v.r) && !ISNAN(v.i)
+					? v
+					: xp[j];
+			}
+			#pragma omp parallel for
+			for (R_xlen_t j = 0; j < n; j++) {
+				Rcomplex v = ansp[j];
 				k += !ISNAN(v.r) && !ISNAN(v.i);
 			}
 			if (k >= n) {
@@ -168,28 +207,36 @@ SEXP coalesce(SEXP args)
 				goto out;
 			}
 			break;
-		case STRSXP:
-			for (R_xlen_t j = 0; j < n; j++) {
+		}
+		case STRSXP: {
+			const SEXP *ansp = STRING_PTR_RO(ans);
+			const SEXP *xp = STRING_PTR_RO(x);
+			R_xlen_t m = XLENGTH(x);
+			R_xlen_t k = 0;
+
+			for (R_xlen_t j = 0; j < m; j++) {
 				SEXP v = STRING_ELT(ans, j);
 				if (v == NA_STRING) {
-					SET_STRING_ELT(ans, j, STRING_ELT(x, j));
+					SET_STRING_ELT(ans, j, xp[j]);
 				}
 			}
-			for (R_xlen_t j = k = 0; j < n; j++) {
-				SEXP v = STRING_ELT(ans, j);
-				k += v != NA_STRING;
+			#pragma omp parallel for
+			for (R_xlen_t j = 0; j < n; j++) {
+				k += ansp[j] != NA_STRING;
 			}
 			if (k >= n) {
 				/* premature finish */
 				goto out;
 			}
 			break;
+		}
 		default:
 			error("unsupported type");
 			goto err;
 		}
 	}
 
+	classgets(ans, cls);
 out:
 	UNPROTECT(2);
 	return ans;
