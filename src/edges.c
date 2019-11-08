@@ -39,13 +39,18 @@ SEXP coalesce(SEXP args)
 	SEXP cls;
 
 	/* eliminate NULLs */
-	for (SEXP z = args; z != R_NilValue; z = CDR(z)) {
-		if (CADR(z) == R_NilValue) {
-			SETCDR(z, CDDR(z));
+	for (SEXP p = args, z = CDR(p); z != R_NilValue; z = CDR(z)) {
+		if (CAR(z) == R_NilValue) {
+			SETCDR(p, CDR(z));
+		} else {
+			p = z;
 		}
 	}
 
 	anstyp = TYPEOF(CAR(args = CDR(args)));
+	if (UNLIKELY(anstyp == NILSXP)) {
+		return R_NilValue;
+	}
 	cls = PROTECT(getAttrib(CAR(args), R_ClassSymbol));
 
 	/* obtain maximum length and check types */
@@ -119,7 +124,7 @@ SEXP coalesce(SEXP args)
 		}
 	}
 
-	for (args = CDR(args); args != R_NilValue; args = CDR(args)) {
+	for (; args != R_NilValue; args = CDR(args)) {
 		SEXP x = CAR(args);
 
 		switch (anstyp) {

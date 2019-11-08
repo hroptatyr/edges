@@ -14,3 +14,14 @@ test_that("coalesce extending", {
 test_that("coalesce recycle", {
 	expect_equal(coalesce(c("ab",NA,"ef"), NULL, "xy"), c("ab","xy","ef"))
 })
+
+test_that("coalesce NULL", {
+	expect_true(is.null(coalesce(NULL)))
+	expect_true(is.null(coalesce(NULL, NULL)))
+	expect_true(is.null(coalesce(NULL, NULL, NULL)))
+
+	expect_true(!is.na(coalesce(1, NULL)))
+	expect_true(!is.na(coalesce(1, NULL, NULL)))
+	expect_equal(length(coalesce(NULL, c(1,2), NULL)), 2L)
+	expect_equal(length(coalesce(1, NULL, c(1,2))), 2L)
+})
