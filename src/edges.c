@@ -159,8 +159,8 @@ SEXP coalesce(SEXP args)
 			break;
 		}
 		case INTSXP: {
-			int *restrict ansp = LOGICAL(ans);
-			const int *xp = LOGICAL(x);
+			int *restrict ansp = INTEGER(ans);
+			const int *xp = INTEGER(x);
 			R_xlen_t m = XLENGTH(x);
 			R_xlen_t k = 0;
 

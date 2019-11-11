@@ -4,6 +4,7 @@ test_that("simple", {
 	expect_equal(coalesce(as.Date(c(NA, NA, "2020-01-01")), as.Date(c("2017-01-01", NA, "2022-01-01"))), as.Date(c("2017-01-01", NA, "2020-01-01")))
 	expect_equal(coalesce(as.Date(c(NA, NA, "2020-01-01")), NULL, as.Date(c("2017-01-01", NA, "2022-01-01"))), as.Date(c("2017-01-01", NA, "2020-01-01")))
 	expect_equal(coalesce(as.Date(c(NA, NA, "2020-01-01")), NULL, as.Date(c("2017-01-01", NA, NA, "2022-01-01"))), as.Date(c("2017-01-01", NA, "2020-01-01", "2022-01-01")))
+	expect_equal(coalesce(c(11L, NA, 13L, NA, 15L, NA), c(NA, 12L, 5L), c(11L, NA, 1L, 14L, NA)), c(11L, 12L, 13L, 14L, 15L, NA))
 })
 
 test_that("coalesce extending", {
