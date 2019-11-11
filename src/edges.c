@@ -147,14 +147,14 @@ SEXP coalesce(SEXP args)
 				}
 				if (k >= n) {
 					/* premature finish */
-					goto out;
+					goto clsout;
 				}
 			} else if (m == 1) {
 				#pragma omp parallel for
 				for (R_xlen_t j = 0; j < n; j++) {
 					ansp[j] = ansp[j] != NA_LOGICAL ? ansp[j] : *xp;
 				}
-				goto out;
+				goto clsout;
 			}
 			break;
 		}
@@ -177,14 +177,14 @@ SEXP coalesce(SEXP args)
 				}
 				if (k >= n) {
 					/* premature finish */
-					goto out;
+					goto clsout;
 				}
 			} else if (m == 1) {
 				#pragma omp parallel for
 				for (R_xlen_t j = 0; j < n; j++) {
 					ansp[j] = ansp[j] != NA_INTEGER ? ansp[j] : *xp;
 				}
-				goto out;
+				goto clsout;
 			}
 			break;
 		}
@@ -207,14 +207,14 @@ SEXP coalesce(SEXP args)
 				}
 				if (k >= n) {
 					/* premature finish */
-					goto out;
+					goto clsout;
 				}
 			} else if (m == 1) {
 				#pragma omp parallel for
 				for (R_xlen_t j = 0; j < n; j++) {
 					ansp[j] = !ISNAN(ansp[j]) ? ansp[j] : *xp;
 				}
-				goto out;
+				goto clsout;
 			}
 			break;
 		}
@@ -239,7 +239,7 @@ SEXP coalesce(SEXP args)
 				}
 				if (k >= n) {
 					/* premature finish */
-					goto out;
+					goto clsout;
 				}
 			} else if (m == 1) {
 				#pragma omp parallel for
@@ -247,7 +247,7 @@ SEXP coalesce(SEXP args)
 					Rcomplex v = ansp[j];
 					ansp[j] = !ISNAN(v.r) && !ISNAN(v.i) ? v : *xp;
 				}
-				goto out;
+				goto clsout;
 			}
 			break;
 		}
@@ -270,14 +270,14 @@ SEXP coalesce(SEXP args)
 				}
 				if (k >= n) {
 					/* premature finish */
-					goto out;
+					goto clsout;
 				}
 			} else if (m == 1) {
 				#pragma omp parallel for
 				for (R_xlen_t j = 0; j < n; j++) {
 					ansp[j] = ansp[j] != NA_STRING ? ansp[j] : *xp;
 				}
-				goto out;
+				goto clsout;
 			}
 			break;
 		}
@@ -287,6 +287,7 @@ SEXP coalesce(SEXP args)
 		}
 	}
 
+clsout:
 	classgets(ans, cls);
 out:
 	UNPROTECT(2);
