@@ -2,6 +2,7 @@ useDynLib(edges, .registration=TRUE)
 
 export(coalesce)
 export(na.locf)
+export(na.nocb)
 
 export(edges)
 export(rally)

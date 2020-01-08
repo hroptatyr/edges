@@ -297,7 +297,7 @@ err:
 	return R_NilValue;
 }
 
-SEXP na_locf0(SEXP x)
+SEXP na_locf0(SEXP x, SEXP fbwd)
 {
 	R_xlen_t n = XLENGTH(x);
 	SEXP ans;
@@ -311,16 +311,26 @@ SEXP na_locf0(SEXP x)
 		for (k = 0; k < n && STRING_ELT(x, k) == NA_STRING; k++) {
 			SET_STRING_ELT(ans, k, NA_STRING);
 		}
+		if (*INTEGER(fbwd) > 0 && k < n) {
+			for (R_xlen_t i = 0; i < k; i++) {
+				SET_STRING_ELT(ans, i, STRING_ELT(x, k));
+			}
+		}
 		for (R_xlen_t i; k < n; k = i) {
 			SET_STRING_ELT(ans, k, STRING_ELT(x, k));
 			for (i = k + 1; i < n && STRING_ELT(x, i) == NA_STRING; i++) {
-				SET_STRING_ELT(ans, i,  STRING_ELT(x, k));
+				SET_STRING_ELT(ans, i, STRING_ELT(x, k));
 			}
 		}
 		break;
 	case INTSXP:
 		for (k = 0; k < n && INTEGER(x)[k] == NA_INTEGER; k++) {
 			INTEGER(ans)[k] = NA_INTEGER;
+		}
+		if (*INTEGER(fbwd) > 0 && k < n) {
+			for (R_xlen_t i = 0; i < k; i++) {
+				INTEGER(ans)[i] = INTEGER(x)[k];
+			}
 		}
 		for (R_xlen_t i; k < n; k = i) {
 			INTEGER(ans)[k] = INTEGER(x)[k];
@@ -333,6 +343,11 @@ SEXP na_locf0(SEXP x)
 		for (k = 0; k < n && R_IsNA(REAL(x)[k]); k++) {
 			REAL(ans)[k] = NA_REAL;
 		}
+		if (*INTEGER(fbwd) > 0 && k < n) {
+			for (R_xlen_t i = 0; i < k; i++) {
+				REAL(ans)[i] = REAL(x)[k];
+			}
+		}
 		for (R_xlen_t i; k < n; k = i) {
 			REAL(ans)[k] = REAL(x)[k];
 			for (i = k + 1; i < n && R_IsNA(REAL(x)[i]); i++) {
@@ -344,10 +359,103 @@ SEXP na_locf0(SEXP x)
 		for (k = 0; k < n && LOGICAL(x)[k] == NA_LOGICAL; k++) {
 			LOGICAL(ans)[k] = NA_LOGICAL;
 		}
+		if (*INTEGER(fbwd) > 0 && k < n) {
+			for (R_xlen_t i = 0; i < k; i++) {
+				LOGICAL(ans)[i] = LOGICAL(x)[k];
+			}
+		}
 		for (R_xlen_t i; k < n; k = i) {
 			LOGICAL(ans)[k] = LOGICAL(x)[k];
 			for (i = k + 1; i < n && LOGICAL(x)[i] == NA_LOGICAL; i++) {
 				LOGICAL(ans)[i] = LOGICAL(x)[k];
+			}
+		}
+		break;
+	case LISTSXP:
+	case VECSXP:
+	case CPLXSXP:
+	case RAWSXP:
+	case NILSXP:
+	default:
+		ans = x;
+		break;
+	}
+
+	UNPROTECT(1);
+	return ans;
+}
+
+SEXP na_nocb0(SEXP x, SEXP lfwd)
+{
+	R_xlen_t n = XLENGTH(x);
+	SEXP ans;
+	int r;
+
+	PROTECT(ans = allocVector(TYPEOF(x), n));
+
+	switch (TYPEOF(x)) {
+		R_xlen_t k;
+	case STRSXP:
+		for (k = n; k > 0 && STRING_ELT(x, k-1) == NA_STRING; k--) {
+			SET_STRING_ELT(ans, k-1, NA_STRING);
+		}
+		if (*INTEGER(lfwd) > 0 && k > 0) {
+			for (R_xlen_t i = n; i > k; i--) {
+				SET_STRING_ELT(ans, i-1, STRING_ELT(x, k-1));
+			}
+		}
+		for (R_xlen_t i; k > 0; k = i) {
+			SET_STRING_ELT(ans, k-1, STRING_ELT(x, k-1));
+			for (i = k-1; i > 0 && STRING_ELT(x, i-1) == NA_STRING; i--) {
+				SET_STRING_ELT(ans, i-1, STRING_ELT(x, k-1));
+			}
+		}
+		break;
+	case INTSXP:
+		for (k = n; k > 0 && INTEGER(x)[k-1] == NA_INTEGER; k--) {
+			INTEGER(ans)[k-1] = NA_INTEGER;
+		}
+		if (*INTEGER(lfwd) > 0 && k > 0) {
+			for (R_xlen_t i = n; i > k; i--) {
+				INTEGER(ans)[i-1] = INTEGER(x)[k-1];
+			}
+		}
+		for (R_xlen_t i; k > 0; k = i) {
+			INTEGER(ans)[k-1] = INTEGER(x)[k-1];
+			for (i = k-1; i > 0 && INTEGER(x)[i-1] == NA_INTEGER; i--) {
+				INTEGER(ans)[i-1] = INTEGER(x)[k-1];
+			}
+		}
+		break;
+	case REALSXP:
+		for (k = n; k > 0 && R_IsNA(REAL(x)[k-1]); k--) {
+			REAL(ans)[k-1] = NA_REAL;
+		}
+		if (*INTEGER(lfwd) > 0 && k > 0) {
+			for (R_xlen_t i = n; i > k; i--) {
+				REAL(ans)[i-1] = REAL(x)[k-1];
+			}
+		}
+		for (R_xlen_t i; k > 0; k = i) {
+			REAL(ans)[k-1] = REAL(x)[k-1];
+			for (i = k-1; i > 0 && R_IsNA(REAL(x)[i-1]); i--) {
+				REAL(ans)[i-1] = REAL(x)[k-1];
+			}
+		}
+		break;
+	case LGLSXP:
+		for (k = n; k > 0 && LOGICAL(x)[k-1] == NA_LOGICAL; k--) {
+			LOGICAL(ans)[k-1] = NA_LOGICAL;
+		}
+		if (*INTEGER(lfwd) > 0 && k > 0) {
+			for (R_xlen_t i = n; i > k; i--) {
+				LOGICAL(ans)[i-1] = LOGICAL(x)[k-1];
+			}
+		}
+		for (R_xlen_t i; k > 0; k = i) {
+			LOGICAL(ans)[k-1] = LOGICAL(x)[k-1];
+			for (i = k-1; i > 0 && LOGICAL(x)[i-1] == NA_LOGICAL; i--) {
+				LOGICAL(ans)[i-1] = LOGICAL(x)[k-1];
 			}
 		}
 		break;
