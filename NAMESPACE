@@ -1,6 +1,7 @@
 useDynLib(edges, .registration=TRUE)
 
 export(coalesce)
+export(tcoalesce)
 export(na.locf)
 export(na.nocb)
 

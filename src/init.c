@@ -10,6 +10,7 @@ R_CallMethodDef callMethods[] = {
 	{"Ccumrally", (DL_FUNC)&cumrally, -1},
 	{"Cna.locf0", (DL_FUNC)&na_locf0, -1},
 	{"Cna.nocb0", (DL_FUNC)&na_nocb0, -1},
+	{"Ctcoalesce1", (DL_FUNC)&tcoalesce1, -1},
 	{NULL, NULL, 0}
 };
 

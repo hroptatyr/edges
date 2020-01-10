@@ -26,3 +26,17 @@ test_that("coalesce NULL", {
 	expect_equal(length(coalesce(NULL, c(1,2), NULL)), 2L)
 	expect_equal(length(coalesce(1, NULL, c(1,2))), 2L)
 })
+
+test_that("tcoalesce", {
+	x = c(11L, NA, 13L, NA, 15L, NA)
+	y = c(NA, 12L, 5L)
+	z = c(11L, NA, 1L, 14L, NA, NA)
+	expect_equal(tcoalesce(x, y, z), list(11L, 12L, 11L))
+
+	x = c(NA, 13L, NA)
+	y = c(NA, "FOO", "BAR")
+	z = c(NA, NA)
+	expect_equal(tcoalesce(x,y,z), list(13L, "FOO", NA))
+
+	expect_equal(tcoalesce(data.frame(a=x,b=y,c=as.Date(c(z,NA)))), list(a=13L,b="FOO",c=as.Date(NA)))
+})

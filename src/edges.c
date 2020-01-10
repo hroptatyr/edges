@@ -297,6 +297,54 @@ err:
 	return R_NilValue;
 }
 
+SEXP tcoalesce1(SEXP arg)
+{
+	R_xlen_t n = XLENGTH(arg);
+	SEXPTYPE anstyp = TYPEOF(arg);
+	SEXP cls;
+	SEXP ans;
+
+	PROTECT(ans = allocVector(anstyp, n > 0));
+	cls = PROTECT(getAttrib(arg, R_ClassSymbol));
+	if (n <= 0) {
+		goto clsout;
+	}
+	switch (anstyp) {
+		R_xlen_t k;
+	case STRSXP:
+		for (k = 0; k < n && STRING_ELT(arg, k) == NA_STRING; k++);
+		k = k < n ? k : 0;
+		SET_STRING_ELT(ans, 0, STRING_ELT(arg, k));
+		break;
+	case INTSXP:
+	case LGLSXP:
+		for (k = 0; k < n && INTEGER(arg)[k] == NA_INTEGER; k++);
+		k = k < n ? k : 0;
+		INTEGER(ans)[0] = INTEGER(arg)[k];
+		break;
+	case REALSXP:
+		for (k = 0; k < n && R_IsNA(REAL(arg)[k]); k++);
+		k = k < n ? k : 0;
+		REAL(ans)[0] = REAL(arg)[k];
+		break;
+	case LISTSXP:
+	case VECSXP:
+	case CPLXSXP:
+	case RAWSXP:
+	case NILSXP:
+	default:
+		goto err;
+	}
+clsout:
+	classgets(ans, cls);
+	UNPROTECT(2);
+	return ans;
+err:
+	UNPROTECT(2);
+	return R_NilValue;
+}
+
+
 SEXP na_locf0(SEXP x, SEXP fbwd)
 {
 	R_xlen_t n = XLENGTH(x);

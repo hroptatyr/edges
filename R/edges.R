@@ -3,6 +3,20 @@ coalesce <- function(...)
 	.External(Ccoalesce, ...)
 }
 
+tcoalesce1 <- function(x)
+{
+	.Call(Ctcoalesce1, x)
+}
+
+tcoalesce <- function(...)
+{
+	x <- list(...)
+	if (length(x) == 1L && is.list(x[[1L]])) {
+		x <- x[[1L]]
+	}
+	lapply(x, tcoalesce1)
+}
+
 edges <- function(x)
 {
 	.Call(Cedges, x)
