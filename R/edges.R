@@ -14,7 +14,11 @@ tcoalesce <- function(...)
 	if (length(x) == 1L && is.list(x[[1L]])) {
 		x <- x[[1L]]
 	}
-	lapply(x, tcoalesce1)
+	if (length(x) == 1L) {
+		tcoalesce1(x[[1L]])
+	} else {
+		lapply(x, tcoalesce1)
+	}
 }
 
 edges <- function(x)

@@ -299,15 +299,19 @@ err:
 
 SEXP tcoalesce1(SEXP arg)
 {
-	R_xlen_t n = XLENGTH(arg);
 	SEXPTYPE anstyp = TYPEOF(arg);
+	R_xlen_t n;
 	SEXP cls;
 	SEXP ans;
 
+	if (UNLIKELY(anstyp == NILSXP)) {
+		return R_NilValue;
+	}
 	if (isFactor(arg)) {
 		arg = asCharacterFactor(arg);
 		anstyp = STRSXP;
 	}
+	n = XLENGTH(arg);
 	PROTECT(ans = allocVector(anstyp, n > 0));
 	cls = PROTECT(getAttrib(arg, R_ClassSymbol));
 	if (n <= 0) {
@@ -351,13 +355,16 @@ err:
 
 SEXP na_locf0(SEXP x, SEXP fbwd)
 {
-	R_xlen_t n = XLENGTH(x);
 	SEXPTYPE anstyp = TYPEOF(x);
+	R_xlen_t n;
 	SEXP cls, lvl;
 	SEXP ans;
 	int r;
 
-	PROTECT(ans = allocVector(anstyp, n));
+	if (UNLIKELY(anstyp == NILSXP)) {
+		return R_NilValue;
+	}
+	PROTECT(ans = allocVector(anstyp, n = XLENGTH(x)));
 	cls = PROTECT(getAttrib(x, R_ClassSymbol));
 	if (isFactor(x)) {
 		lvl = PROTECT(getAttrib(x, R_LevelsSymbol));
@@ -449,13 +456,16 @@ SEXP na_locf0(SEXP x, SEXP fbwd)
 
 SEXP na_nocb0(SEXP x, SEXP lfwd)
 {
-	R_xlen_t n = XLENGTH(x);
 	SEXPTYPE anstyp = TYPEOF(x);
+	R_xlen_t n;
 	SEXP cls, lvl;
 	SEXP ans;
 	int r;
 
-	PROTECT(ans = allocVector(TYPEOF(x), n));
+	if (UNLIKELY(anstyp == NILSXP)) {
+		return R_NilValue;
+	}
+	PROTECT(ans = allocVector(anstyp, n = XLENGTH(x)));
 	cls = PROTECT(getAttrib(x, R_ClassSymbol));
 	if (isFactor(x)) {
 		lvl = PROTECT(getAttrib(x, R_LevelsSymbol));
