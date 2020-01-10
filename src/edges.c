@@ -304,6 +304,10 @@ SEXP tcoalesce1(SEXP arg)
 	SEXP cls;
 	SEXP ans;
 
+	if (isFactor(arg)) {
+		arg = asCharacterFactor(arg);
+		anstyp = STRSXP;
+	}
 	PROTECT(ans = allocVector(anstyp, n > 0));
 	cls = PROTECT(getAttrib(arg, R_ClassSymbol));
 	if (n <= 0) {
@@ -348,12 +352,18 @@ err:
 SEXP na_locf0(SEXP x, SEXP fbwd)
 {
 	R_xlen_t n = XLENGTH(x);
+	SEXPTYPE anstyp = TYPEOF(x);
+	SEXP cls, lvl;
 	SEXP ans;
 	int r;
 
-	PROTECT(ans = allocVector(TYPEOF(x), n));
+	PROTECT(ans = allocVector(anstyp, n));
+	cls = PROTECT(getAttrib(x, R_ClassSymbol));
+	if (isFactor(x)) {
+		lvl = PROTECT(getAttrib(x, R_LevelsSymbol));
+	}
 
-	switch (TYPEOF(x)) {
+	switch (anstyp) {
 		R_xlen_t k;
 	case STRSXP:
 		for (k = 0; k < n && STRING_ELT(x, k) == NA_STRING; k++) {
@@ -429,19 +439,29 @@ SEXP na_locf0(SEXP x, SEXP fbwd)
 		break;
 	}
 
-	UNPROTECT(1);
+	classgets(ans, cls);
+	if (isFactor(x)) {
+		setAttrib(ans, R_LevelsSymbol, lvl);
+	}
+	UNPROTECT(2 + isFactor(x));
 	return ans;
 }
 
 SEXP na_nocb0(SEXP x, SEXP lfwd)
 {
 	R_xlen_t n = XLENGTH(x);
+	SEXPTYPE anstyp = TYPEOF(x);
+	SEXP cls, lvl;
 	SEXP ans;
 	int r;
 
 	PROTECT(ans = allocVector(TYPEOF(x), n));
+	cls = PROTECT(getAttrib(x, R_ClassSymbol));
+	if (isFactor(x)) {
+		lvl = PROTECT(getAttrib(x, R_LevelsSymbol));
+	}
 
-	switch (TYPEOF(x)) {
+	switch (anstyp) {
 		R_xlen_t k;
 	case STRSXP:
 		for (k = n; k > 0 && STRING_ELT(x, k-1) == NA_STRING; k--) {
@@ -517,11 +537,15 @@ SEXP na_nocb0(SEXP x, SEXP lfwd)
 		break;
 	}
 
-	UNPROTECT(1);
+	classgets(ans, cls);
+	if (isFactor(x)) {
+		setAttrib(ans, R_LevelsSymbol, lvl);
+	}
+	UNPROTECT(2 + isFactor(x));
 	return ans;
 }
 
-
+
 SEXP edges(SEXP x)
 {
 	R_xlen_t n = XLENGTH(x);
