@@ -69,3 +69,23 @@ na.nocb <- function(x, last.forward=FALSE)
 	}
 	return(x);
 }
+
+na.cumsum <- function(x, na.locf=FALSE, first.backward=FALSE)
+{
+	.Call(Cna.cumsum, x, na.locf + first.backward)
+}
+
+na.cumprod <- function(x, na.locf=FALSE, first.backward=FALSE)
+{
+	.Call(Cna.cumprod, x, na.locf + first.backward)
+}
+
+na.cummax <- function(x, na.locf=FALSE, first.backward=FALSE)
+{
+	.Call(Cna.cummax, x, na.locf + first.backward)
+}
+
+na.cummin <- function(x, na.locf=FALSE, first.backward=FALSE)
+{
+	.Call(Cna.cummin, x, na.locf + first.backward)
+}

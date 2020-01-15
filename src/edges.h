@@ -9,3 +9,9 @@ SEXP na_nocb0(SEXP x, SEXP lfwd);
 SEXP edges(SEXP x);
 SEXP rally(SEXP x);
 SEXP cumrally(SEXP x);
+
+SEXP na_cum(SEXP args);
+SEXP na_cumsum(SEXP x, SEXP locf);
+SEXP na_cumprod(SEXP x, SEXP locf);
+SEXP na_cummax(SEXP x, SEXP locf);
+SEXP na_cummin(SEXP x, SEXP locf);

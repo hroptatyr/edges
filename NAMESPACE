@@ -8,3 +8,8 @@ export(na.nocb)
 export(edges)
 export(rally)
 export(cumrally)
+
+export(na.cumsum)
+export(na.cumprod)
+export(na.cummax)
+export(na.cummin)
