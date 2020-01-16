@@ -5,10 +5,11 @@
 Return the first non-NA value along each vector in a list of vectors.
 }
 \usage{
-tcoalesce(\dots)
+tcoalesce(\dots, rev=FALSE)
 }
 \arguments{
 \item{\dots}{A sequence of vectors.}
+\item{rev}{Whether to start looking for non-NA values from the back.}
 }
 \details{
 Like ANSI SQL's COALESCE aggregate.
@@ -24,5 +25,6 @@ x = c(11L, NA, 13L, NA, 15L, NA)
 y = c(NA, 12L, 5L)
 z = c(11L, NA, 1L, 14L, NA, NA)
 tcoalesce(x, y, z)
+tcoalesce(x, y, z, rev=TRUE)
 }
 \keyword{data}

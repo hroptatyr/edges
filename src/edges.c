@@ -297,7 +297,7 @@ err:
 	return R_NilValue;
 }
 
-SEXP tcoalesce1(SEXP arg)
+SEXP tcoalesce1(SEXP arg, SEXP rev)
 {
 	SEXPTYPE anstyp = TYPEOF(arg);
 	R_xlen_t n;
@@ -313,42 +313,76 @@ SEXP tcoalesce1(SEXP arg)
 	}
 	n = XLENGTH(arg);
 	PROTECT(ans = allocVector(anstyp, n > 0));
-	cls = PROTECT(getAttrib(arg, R_ClassSymbol));
+	classgets(ans, getAttrib(arg, R_ClassSymbol));
+	UNPROTECT(1);
 	if (n <= 0) {
-		goto clsout;
+		return ans;
 	}
-	switch (anstyp) {
-		R_xlen_t k;
-	case STRSXP:
-		for (k = 0; k < n && STRING_ELT(arg, k) == NA_STRING; k++);
-		k = k < n ? k : 0;
-		SET_STRING_ELT(ans, 0, STRING_ELT(arg, k));
-		break;
-	case INTSXP:
-	case LGLSXP:
-		for (k = 0; k < n && INTEGER(arg)[k] == NA_INTEGER; k++);
-		k = k < n ? k : 0;
-		INTEGER(ans)[0] = INTEGER(arg)[k];
-		break;
-	case REALSXP:
-		for (k = 0; k < n && R_IsNA(REAL(arg)[k]); k++);
-		k = k < n ? k : 0;
-		REAL(ans)[0] = REAL(arg)[k];
-		break;
-	case LISTSXP:
-	case VECSXP:
-	case CPLXSXP:
-	case RAWSXP:
-	case NILSXP:
-	default:
-		goto err;
+	if (*INTEGER_RO(rev) <= 0) {
+		switch (anstyp) {
+			R_xlen_t k;
+		case STRSXP:
+			for (k = 0; k < n && STRING_ELT(arg, k) == NA_STRING; k++);
+			k = k < n ? k : 0;
+			SET_STRING_ELT(ans, 0, STRING_ELT(arg, k));
+			break;
+		case INTSXP:
+		case LGLSXP:
+			for (k = 0; k < n && INTEGER(arg)[k] == NA_INTEGER; k++);
+			k = k < n ? k : 0;
+			INTEGER(ans)[0] = INTEGER(arg)[k];
+			break;
+		case REALSXP:
+			for (k = 0; k < n && R_IsNA(REAL(arg)[k]); k++);
+			k = k < n ? k : 0;
+			REAL(ans)[0] = REAL(arg)[k];
+			break;
+		case CPLXSXP:
+			for (k = 0; k < n && R_IsNA(COMPLEX(arg)[k].r); k++);
+			k = k < n ? k : 0;
+			COMPLEX(ans)[0] = COMPLEX(arg)[k];
+			break;
+		case LISTSXP:
+		case VECSXP:
+		case RAWSXP:
+		case NILSXP:
+		default:
+			goto err;
+		}
+	} else {
+		switch (anstyp) {
+			R_xlen_t k;
+		case STRSXP:
+			for (k = n; k > 0 && STRING_ELT(arg, k-1) == NA_STRING; k--);
+			k -= k > 0;
+			SET_STRING_ELT(ans, 0, STRING_ELT(arg, k));
+			break;
+		case INTSXP:
+		case LGLSXP:
+			for (k = n; k > 0 && INTEGER(arg)[k-1] == NA_INTEGER; k--);
+			k -= k > 0;
+			INTEGER(ans)[0] = INTEGER(arg)[k];
+			break;
+		case REALSXP:
+			for (k = n; k > 0 && R_IsNA(REAL(arg)[k-1]); k--);
+			k -= k > 0;
+			REAL(ans)[0] = REAL(arg)[k];
+			break;
+		case CPLXSXP:
+			for (k = n; k > 0 && R_IsNA(COMPLEX(arg)[k-1].r); k--);
+			k -= k > 0;
+			COMPLEX(ans)[0] = COMPLEX(arg)[k];
+			break;
+		case LISTSXP:
+		case VECSXP:
+		case RAWSXP:
+		case NILSXP:
+		default:
+			goto err;
+		}
 	}
-clsout:
-	classgets(ans, cls);
-	UNPROTECT(2);
 	return ans;
 err:
-	UNPROTECT(2);
 	return R_NilValue;
 }
 

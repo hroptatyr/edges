@@ -3,21 +3,21 @@ coalesce <- function(...)
 	.External(Ccoalesce, ...)
 }
 
-tcoalesce1 <- function(x)
+tcoalesce1 <- function(x, rev)
 {
-	.Call(Ctcoalesce1, x)
+	.Call(Ctcoalesce1, x, rev)
 }
 
-tcoalesce <- function(...)
+tcoalesce <- function(..., rev=FALSE)
 {
 	x <- list(...)
 	if (length(x) == 1L && is.list(x[[1L]])) {
 		x <- x[[1L]]
 	}
 	if (length(x) == 1L) {
-		tcoalesce1(x[[1L]])
+		tcoalesce1(x[[1L]], rev)
 	} else {
-		lapply(x, tcoalesce1)
+		lapply(x, tcoalesce1, rev=rev)
 	}
 }
 

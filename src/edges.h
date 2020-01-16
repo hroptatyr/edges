@@ -2,7 +2,7 @@
 #include <Rinternals.h>
 
 SEXP coalesce(SEXP args);
-SEXP tcoalesce1(SEXP arg);
+SEXP tcoalesce1(SEXP arg, SEXP rev);
 SEXP na_locf0(SEXP x, SEXP fbwd);
 SEXP na_nocb0(SEXP x, SEXP lfwd);
 
