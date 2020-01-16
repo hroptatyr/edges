@@ -323,24 +323,24 @@ SEXP tcoalesce1(SEXP arg, SEXP rev)
 			R_xlen_t k;
 		case STRSXP:
 			for (k = 0; k < n && STRING_ELT(arg, k) == NA_STRING; k++);
-			k = k < n ? k : 0;
-			SET_STRING_ELT(ans, 0, STRING_ELT(arg, k));
+			k += k < n;
+			SET_STRING_ELT(ans, 0, STRING_ELT(arg, k - 1));
 			break;
 		case INTSXP:
 		case LGLSXP:
 			for (k = 0; k < n && INTEGER(arg)[k] == NA_INTEGER; k++);
-			k = k < n ? k : 0;
-			INTEGER(ans)[0] = INTEGER(arg)[k];
+			k += k < n;
+			INTEGER(ans)[0] = INTEGER(arg)[k - 1];
 			break;
 		case REALSXP:
 			for (k = 0; k < n && R_IsNA(REAL(arg)[k]); k++);
-			k = k < n ? k : 0;
-			REAL(ans)[0] = REAL(arg)[k];
+			k += k < n;
+			REAL(ans)[0] = REAL(arg)[k - 1];
 			break;
 		case CPLXSXP:
 			for (k = 0; k < n && R_IsNA(COMPLEX(arg)[k].r); k++);
-			k = k < n ? k : 0;
-			COMPLEX(ans)[0] = COMPLEX(arg)[k];
+			k += k < n;
+			COMPLEX(ans)[0] = COMPLEX(arg)[k - 1];
 			break;
 		case LISTSXP:
 		case VECSXP:
