@@ -8,6 +8,11 @@ tcoalesce1 <- function(x, rev)
 	.Call(Ctcoalesce1, x, rev)
 }
 
+tcoalesceI <- function(x, rev)
+{
+	.Call(CtcoalesceI, x, rev)
+}
+
 tcoalesce <- function(..., rev=FALSE)
 {
 	x <- list(...)
@@ -18,6 +23,21 @@ tcoalesce <- function(..., rev=FALSE)
 		tcoalesce1(x[[1L]], rev)
 	} else {
 		lapply(x, tcoalesce1, rev=rev)
+	}
+}
+
+tcoalesce.complete.cases <- function(..., rev=FALSE)
+{
+	x <- list(...)
+	if (length(x) == 1L && is.list(x[[1L]])) {
+		x <- x[[1L]]
+	}
+	if (length(x) == 1L) {
+		tcoalesce1(x[[1L]], rev)
+	} else {
+		y <- sapply(x, tcoalesceI, rev=rev)
+		y <- if (!rev) max(y) else min(y)
+		lapply(x, `[`, y)
 	}
 }
 

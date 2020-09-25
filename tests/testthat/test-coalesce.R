@@ -42,3 +42,9 @@ test_that("tcoalesce", {
 
 	expect_equal(tcoalesce(data.frame(a=x,b=y,c=as.Date(c(z,NA)))), list(a=13L,b="FOO",c=as.Date(NA)))
 })
+
+test_that("tcoalesce", {
+	x = data.frame(V1=c("abc","def","ghi","jkl"), V2=c(NA, 2, 3, NA))
+	expect_equal(tcoalesce.complete.cases(x), list(V1="def", V2=2))
+	expect_equal(tcoalesce.complete.cases(x, rev=TRUE), list(V1="ghi", V2=3))
+})

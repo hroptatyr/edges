@@ -386,6 +386,78 @@ err:
 	return R_NilValue;
 }
 
+SEXP tcoalesceI(SEXP arg, SEXP rev)
+{
+	R_xlen_t n;
+	SEXP cls;
+	SEXP ans;
+
+	if (UNLIKELY(TYPEOF(arg) == NILSXP)) {
+		return R_NilValue;
+	}
+	if (isFactor(arg)) {
+		arg = asCharacterFactor(arg);
+	}
+	n = XLENGTH(arg);
+	PROTECT(ans = allocVector(INTSXP, n > 0));
+	UNPROTECT(1);
+	if (n <= 0) {
+		return ans;
+	}
+	if (*INTEGER_RO(rev) <= 0) {
+		R_xlen_t k;
+		switch (TYPEOF(arg)) {
+		case STRSXP:
+			for (k = 0; k < n && STRING_ELT(arg, k) == NA_STRING; k++);
+			break;
+		case INTSXP:
+		case LGLSXP:
+			for (k = 0; k < n && INTEGER(arg)[k] == NA_INTEGER; k++);
+			break;
+		case REALSXP:
+			for (k = 0; k < n && R_IsNA(REAL(arg)[k]); k++);
+			break;
+		case CPLXSXP:
+			for (k = 0; k < n && R_IsNA(COMPLEX(arg)[k].r); k++);
+			break;
+		case LISTSXP:
+		case VECSXP:
+		case RAWSXP:
+		case NILSXP:
+		default:
+			goto err;
+		}
+		*INTEGER(ans) = (k < n ? k : 0) + 1;
+	} else {
+		R_xlen_t k;
+		switch (TYPEOF(arg)) {
+		case STRSXP:
+			for (k = n; k > 0 && STRING_ELT(arg, k-1) == NA_STRING; k--);
+			break;
+		case INTSXP:
+		case LGLSXP:
+			for (k = n; k > 0 && INTEGER(arg)[k-1] == NA_INTEGER; k--);
+			break;
+		case REALSXP:
+			for (k = n; k > 0 && R_IsNA(REAL(arg)[k-1]); k--);
+			break;
+		case CPLXSXP:
+			for (k = n; k > 0 && R_IsNA(COMPLEX(arg)[k-1].r); k--);
+			break;
+		case LISTSXP:
+		case VECSXP:
+		case RAWSXP:
+		case NILSXP:
+		default:
+			goto err;
+		}
+		*INTEGER(ans) = k ?: n;
+	}
+	return ans;
+err:
+	return R_NilValue;
+}
+
 
 SEXP na_locf0(SEXP x, SEXP fbwd)
 {

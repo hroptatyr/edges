@@ -11,6 +11,7 @@ R_CallMethodDef callMethods[] = {
 	{"Cna.locf0", (DL_FUNC)&na_locf0, -1},
 	{"Cna.nocb0", (DL_FUNC)&na_nocb0, -1},
 	{"Ctcoalesce1", (DL_FUNC)&tcoalesce1, -1},
+	{"CtcoalesceI", (DL_FUNC)&tcoalesceI, -1},
 
 	{"Cna.cumsum", (DL_FUNC)&na_cumsum, -1},
 	{"Cna.cumprod", (DL_FUNC)&na_cumprod, -1},

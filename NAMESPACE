@@ -2,6 +2,7 @@ useDynLib(edges, .registration=TRUE)
 
 export(coalesce)
 export(tcoalesce)
+export(tcoalesce.complete.cases)
 export(na.locf)
 export(na.nocb)
 
@@ -13,3 +14,5 @@ export(na.cumsum)
 export(na.cumprod)
 export(na.cummax)
 export(na.cummin)
+
+export(tcoalesceI)
